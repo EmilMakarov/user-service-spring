@@ -7,8 +7,10 @@ import java.time.LocalDate;
 
 @Data
 @AllArgsConstructor
-public class UserUpdate {
+public class UserResponse {
+    private Long id;
     private String name;
     private String email;
     private int age;
+    private LocalDate createdAt;
 }
