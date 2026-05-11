@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.userservicespring.dto.UserRequest;
 import org.example.userservicespring.dto.UserResponse;
+import org.example.userservicespring.dto.UserUpdateRequest;
 import org.example.userservicespring.entity.User;
 import org.example.userservicespring.exception.DuplicateEmailException;
 import org.example.userservicespring.exception.UserNotFoundException;
@@ -12,6 +13,7 @@ import org.example.userservicespring.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -39,17 +41,17 @@ public class UserService {
         return response(user);
     }
 
-    public List<UserResponse> findAll() {
+    public List<UserResponse> getAllUsers() {
         log.debug("Отображение всех пользователей");
         return userRepository
                 .findAll()
                 .stream()
                 .map(this::response)
-                .toList();
+                .collect(Collectors.toList());
     }
 
     @Transactional
-    public UserResponse update(Long id, UserRequest userRequest) {
+    public UserResponse updateUser(Long id, UserUpdateRequest userRequest) {
         log.debug("Обновление информации о пользователе с id {}", id);
         User user = existById(id);
         if (userRequest.getName() != null) {
@@ -72,7 +74,7 @@ public class UserService {
     }
 
     @Transactional
-    public void delete(Long id) {
+    public void deleteUser(Long id) {
         log.debug("Удаление пользователя с id {}", id);
         existById(id);
         userRepository.deleteById(id);
