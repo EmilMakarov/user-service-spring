@@ -6,11 +6,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.userservicespring.dto.UserRequest;
 import org.example.userservicespring.dto.UserResponse;
 import org.example.userservicespring.entity.User;
+import org.example.userservicespring.exception.DuplicateEmailException;
+import org.example.userservicespring.exception.UserNotFoundException;
 import org.example.userservicespring.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -20,21 +21,26 @@ public class UserService {
 
     @Transactional
     public UserResponse createUser(UserRequest userRequest) {
+        log.debug("Создание пользователя");
         nameValidation(userRequest.getName());
         emailValidation(userRequest.getEmail());
         ageValidation(userRequest.getAge());
         alreadyExistsEmail(userRequest.getEmail());
         User user = new User();
         user = userRepository.save(user);
+        log.info("Пользователь с id {} создан", user.getId());
         return response(user);
     }
 
     public UserResponse getUserById(Long id) {
+        log.debug("Поиск пользователя по id {}", id);
         User user = existById(id);
+
         return response(user);
     }
 
     public List<UserResponse> findAll() {
+        log.debug("Отображение всех пользователей");
         return userRepository
                 .findAll()
                 .stream()
@@ -44,6 +50,7 @@ public class UserService {
 
     @Transactional
     public UserResponse update(Long id, UserRequest userRequest) {
+        log.debug("Обновление информации о пользователе с id {}", id);
         User user = existById(id);
         if (userRequest.getName() != null) {
             nameValidation(userRequest.getName());
@@ -60,23 +67,24 @@ public class UserService {
             ageValidation(userRequest.getAge());
             user.setAge(userRequest.getAge());
         }
+        log.info("Пользователь с id {} обновлён", id);
         return response(user);
     }
 
     @Transactional
     public void delete(Long id) {
+        log.debug("Удаление пользователя с id {}", id);
         existById(id);
         userRepository.deleteById(id);
+        log.info("Пользователь с id {} удалён", id);
     }
 
     private String emailValidation(String email) {
         String trimmed = email.trim();
         if (trimmed.isEmpty()) {
-            log.warn("Email null или пустая строка");
             throw new IllegalArgumentException("Пустая строка");
         }
         if (!trimmed.contains("@") || trimmed.indexOf("@") > trimmed.lastIndexOf('.')) {
-            log.warn("Некорректный email");
             throw new IllegalArgumentException("Некорректный email");
         }
         return trimmed;
@@ -85,18 +93,15 @@ public class UserService {
     private void nameValidation(String name) {
         String trimmed = name.trim();
         if (trimmed.isEmpty()) {
-            log.warn("Пустая строка в имени");
             throw new IllegalArgumentException("Пустая строка");
         }
         if (!name.trim().matches("^[\\p{L} \\-']+$") || name.trim().length() < 3) {
-            log.warn("Введено некорректное имя");
             throw new IllegalArgumentException("Некорректное имя");
         }
     }
 
     private void ageValidation(int age) {
         if (age < 1 || age >= 120) {
-            log.warn("Введён некорректный возраст");
             throw new IllegalArgumentException("Некорректный возраст");
         }
     }
@@ -104,13 +109,12 @@ public class UserService {
     private User existById(Long id) {
         return userRepository
                 .findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Пользователь с таким id не найден"));
+                .orElseThrow(() -> new UserNotFoundException(id));
     }
 
     private void alreadyExistsEmail(String email) {
         if (userRepository.findByEmail(email).isPresent()) {
-            log.warn("Пользователь с таким email уже существует {}", email);
-            throw new IllegalArgumentException("Пользователь с таким email уже существует");
+            throw new DuplicateEmailException(email);
         }
     }
 

@@ -1,6 +1,7 @@
 package org.example.userservicespring.controller;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.userservicespring.dto.UserRequest;
 import org.example.userservicespring.dto.UserResponse;
 import org.example.userservicespring.entity.User;
@@ -10,7 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 public class UserController {
@@ -18,30 +19,37 @@ public class UserController {
 
     @PostMapping
     public ResponseEntity<UserResponse> createUser(@RequestBody UserRequest request) {
+        log.info("Запрос на создание пользователя");
         UserResponse response = userService.createUser(request);
+        log.debug("Ответ от сервера: {}", response.toString());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<UserResponse> getUser(@RequestParam Long id) {
+        log.info("Запрос на получение пользователя по id: {}", id);
         UserResponse response = userService.getUserById(id);
+        log.debug("Ответ сервера: {}", response.toString());
         return ResponseEntity.ok(response);
     }
 
     @GetMapping
     public ResponseEntity<List<UserResponse>> getAllUsers() {
+        log.info("Запрос на получение списка всех пользователей");
         List<UserResponse> users = userService.findAll();
         return ResponseEntity.ok(users);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<UserResponse> updateUser(Long id, @RequestBody UserRequest request) {
+        log.info("Запрос на изменение пользователя с id: {}", id);
         UserResponse response = userService.update(id, request);
         return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<UserResponse> deleteUser(Long id) {
+        log.info("Запрос на удаление пользователя с id: {}", id);
         userService.delete(id);
         return ResponseEntity.noContent().build();
     }
