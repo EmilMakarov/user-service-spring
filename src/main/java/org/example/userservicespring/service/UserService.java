@@ -7,9 +7,11 @@ import org.example.userservicespring.dto.UserRequest;
 import org.example.userservicespring.dto.UserResponse;
 import org.example.userservicespring.dto.UserUpdateRequest;
 import org.example.userservicespring.entity.User;
+import org.example.userservicespring.events.EventPublisher;
 import org.example.userservicespring.exception.DuplicateEmailException;
 import org.example.userservicespring.exception.UserNotFoundException;
 import org.example.userservicespring.repository.UserRepository;
+import org.example.userservicespring.validation.UserValidator;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -20,17 +22,20 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
+    private final EventPublisher eventPublisher;
+    private final UserValidator userValidator;
 
     @Transactional
     public UserResponse createUser(UserRequest userRequest) {
         log.debug("Создание пользователя");
-        nameValidation(userRequest.getName());
-        emailValidation(userRequest.getEmail());
-        ageValidation(userRequest.getAge());
+        userValidator.nameValidation(userRequest.getName());
+        userValidator.emailValidation(userRequest.getEmail());
+        userValidator.ageValidation(userRequest.getAge());
         alreadyExistsEmail(userRequest.getEmail());
         User user = new User();
         user = userRepository.save(user);
         log.info("Пользователь с id {} создан", user.getId());
+        eventPublisher.publishCreateUserEvent(user.getEmail());
         return response(user);
     }
 
@@ -55,18 +60,18 @@ public class UserService {
         log.debug("Обновление информации о пользователе с id {}", id);
         User user = existById(id);
         if (userRequest.getName() != null) {
-            nameValidation(userRequest.getName());
+            userValidator.nameValidation(userRequest.getName());
             user.setName(userRequest.getName().trim());
         }
         if (userRequest.getEmail() != null) {
-            String newMail = emailValidation(userRequest.getEmail());
+            String newMail = userValidator.emailValidation(userRequest.getEmail());
             if (user.getEmail().equalsIgnoreCase(newMail)) {
                 alreadyExistsEmail(newMail);
             }
             user.setEmail(userRequest.getEmail().trim());
         }
         if (userRequest.getAge() != 0) {
-            ageValidation(userRequest.getAge());
+            userValidator.ageValidation(userRequest.getAge());
             user.setAge(userRequest.getAge());
         }
         log.info("Пользователь с id {} обновлён", id);
@@ -76,37 +81,13 @@ public class UserService {
     @Transactional
     public void deleteUser(Long id) {
         log.debug("Удаление пользователя с id {}", id);
-        existById(id);
+        User user = existById(id);
         userRepository.deleteById(id);
+        eventPublisher.publishDeleteUserEvent(user.getEmail());
         log.info("Пользователь с id {} удалён", id);
     }
 
-    private String emailValidation(String email) {
-        String trimmed = email.trim();
-        if (trimmed.isEmpty()) {
-            throw new IllegalArgumentException("Пустая строка");
-        }
-        if (!trimmed.contains("@") || trimmed.indexOf("@") > trimmed.lastIndexOf('.')) {
-            throw new IllegalArgumentException("Некорректный email");
-        }
-        return trimmed;
-    }
 
-    private void nameValidation(String name) {
-        String trimmed = name.trim();
-        if (trimmed.isEmpty()) {
-            throw new IllegalArgumentException("Пустая строка");
-        }
-        if (!name.trim().matches("^[\\p{L} \\-']+$") || name.trim().length() < 3) {
-            throw new IllegalArgumentException("Некорректное имя");
-        }
-    }
-
-    private void ageValidation(int age) {
-        if (age < 1 || age >= 120) {
-            throw new IllegalArgumentException("Некорректный возраст");
-        }
-    }
 
     private User existById(Long id) {
         return userRepository
