@@ -1,4 +1,4 @@
-package org.example.userservicespring.events;
+package org.example.userservicespring.event;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

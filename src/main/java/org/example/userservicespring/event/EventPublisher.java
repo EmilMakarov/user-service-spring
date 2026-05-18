@@ -1,4 +1,4 @@
-package org.example.userservicespring.events;
+package org.example.userservicespring.event;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 public class EventPublisher {
 
     private final KafkaTemplate<String, UserEvent> kafkaTemplate;
-    @Value("{app.kafka.topic.user-events}")
+    @Value("${app.kafka.topic.user-events}")
     private String topic;
     public void publishCreateUserEvent(String email) {
         publish(new UserEvent(UserEventType.CREATED, email));

@@ -1,10 +1,7 @@
 package org.example.userservicespring.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 
 import java.time.LocalDateTime;
@@ -24,12 +21,17 @@ public class User {
     @Column(nullable = false)
     private String email;
     @Column(nullable = false)
-    private int age;
+    private Integer age;
 
-    @CreatedDate
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
+    public User(String name, String email, Integer age) {
+        this.name = name;
+        this.email = email;
+        this.age = age;
+    }
 
     @PrePersist
     void onCreate() {

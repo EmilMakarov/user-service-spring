@@ -7,7 +7,7 @@ import org.example.userservicespring.dto.UserRequest;
 import org.example.userservicespring.dto.UserResponse;
 import org.example.userservicespring.dto.UserUpdateRequest;
 import org.example.userservicespring.entity.User;
-import org.example.userservicespring.events.EventPublisher;
+import org.example.userservicespring.event.EventPublisher;
 import org.example.userservicespring.exception.DuplicateEmailException;
 import org.example.userservicespring.exception.UserNotFoundException;
 import org.example.userservicespring.repository.UserRepository;
@@ -29,10 +29,10 @@ public class UserService {
     public UserResponse createUser(UserRequest userRequest) {
         log.debug("Создание пользователя");
         userValidator.nameValidation(userRequest.getName());
-        userValidator.emailValidation(userRequest.getEmail());
+        String email = userValidator.emailValidation(userRequest.getEmail());
         userValidator.ageValidation(userRequest.getAge());
         alreadyExistsEmail(userRequest.getEmail());
-        User user = new User();
+        User user = new User(userRequest.getName(), email, userRequest.getAge());
         user = userRepository.save(user);
         log.info("Пользователь с id {} создан", user.getId());
         eventPublisher.publishCreateUserEvent(user.getEmail());
